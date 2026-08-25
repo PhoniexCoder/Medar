@@ -1,0 +1,507 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  phone            String?      @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  status           UserStatus   @default(ACTIVE)
+  emailVerifiedAt  DateTime?
+  phoneVerifiedAt  DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  profile             Profile?
+  roles               UserRole[]
+  memberships         OrganizationMembership[]
+  enrollments         Enrollment[]
+  assessmentAttempts  AssessmentAttempt[]
+  certifications      Certification[]
+  userMemberships     Membership[]
+  mediatorProfile     MediatorProfile?
+  caseParties         CaseParty[]
+  uploadedDocs        Document[]
+  eventRegistrations  EventRegistration[]
+  payments            Payment[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  jobApplications     JobApplication[]
+  casesCreated        Case[]                  @relation("CaseCreator")
+  empAppsReviewed     EmpanelmentApplication[] @relation("EmpanelmentReviewer")
+  credentialsVerified Credential[]             @relation("CredentialVerifier")
+}
+
+model Profile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avatar            String?
+  bio               String?
+  location          String?
+  languages         String[]
+  professionalTitle String?
+  education         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  action      String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Organization {
+  id            String                   @id @default(uuid())
+  name          String
+  type          String
+  legalName     String?
+  billingEmail  String
+  status        String                   @default("ACTIVE")
+  metadata      Json?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  members       OrganizationMembership[]
+  memberships   Membership[]
+  payments      Payment[]
+}
+
+model OrganizationMembership {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String       @default("MEMBER")
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+}
+
+model Program {
+  id             String          @id @default(uuid())
+  title          String
+  slug           String          @unique
+  type           String
+  description    String
+  jurisdiction   String
+  duration       String
+  deliveryMode   String
+  price          Float
+  currency       String          @default("INR")
+  status         String          @default("DRAFT")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  cohorts        ProgramCohort[]
+  assessments    Assessment[]
+  certifications Certification[]
+}
+
+model ProgramCohort {
+  id                 String       @id @default(uuid())
+  programId          String
+  program            Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  startDate          DateTime
+  endDate            DateTime
+  seats              Int
+  enrollmentDeadline DateTime
+  status             String       @default("OPEN")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  enrollments        Enrollment[]
+}
+
+model Enrollment {
+  id          String        @id @default(uuid())
+  userId      String
+  cohortId    String
+  status      String        @default("PENDING")
+  paymentId   String?
+  enrolledAt  DateTime      @default(now())
+  completedAt DateTime?
+  user        User          @relation(fields: [userId], references: [id])
+  cohort      ProgramCohort @relation(fields: [cohortId], references: [id])
+}
+
+model Assessment {
+  id           String              @id @default(uuid())
+  programId    String
+  title        String
+  passingScore Float
+  duration     Int
+  status       String              @default("ACTIVE")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  program      Program             @relation(fields: [programId], references: [id])
+  attempts     AssessmentAttempt[]
+}
+
+model AssessmentAttempt {
+  id           String     @id @default(uuid())
+  assessmentId String
+  userId       String
+  score        Float
+  result       String
+  startedAt    DateTime   @default(now())
+  completedAt  DateTime?
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model Certification {
+  id                String    @id @default(uuid())
+  userId            String
+  programId         String
+  certificateNumber String    @unique
+  issuedAt          DateTime  @default(now())
+  expiresAt         DateTime?
+  status            String    @default("ACTIVE")
+  documentUrl       String?
+  user              User      @relation(fields: [userId], references: [id])
+  program           Program   @relation(fields: [programId], references: [id])
+}
+
+model MembershipPlan {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  description String
+  eligibility String
+  price       Float
+  currency    String       @default("INR")
+  duration    Int          @default(365)
+  status      String       @default("ACTIVE")
+  memberships Membership[]
+}
+
+model Membership {
+  id             String          @id @default(uuid())
+  userId         String?
+  organizationId String?
+  planId         String
+  status         String          @default("ACTIVE")
+  startsAt       DateTime        @default(now())
+  expiresAt      DateTime
+  paymentId      String?
+  autoRenew      Boolean         @default(false)
+  plan           MembershipPlan  @relation(fields: [planId], references: [id])
+  user           User?           @relation(fields: [userId], references: [id])
+  organization   Organization?   @relation(fields: [organizationId], references: [id])
+}
+
+model WaitlistEntry {
+  id           String   @id @default(uuid())
+  email        String
+  jurisdiction String
+  createdAt    DateTime @default(now())
+}
+
+model MediatorProfile {
+  id                 String                  @id @default(uuid())
+  userId             String                  @unique
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName        String
+  professionalBio    String
+  yearsOfExperience  Int
+  practiceAreas      String[]
+  languages          String[]
+  locations          String[]
+  jurisdictions      String[]
+  availability       String?
+  feeRange           String?
+  profileStatus      String                  @default("DRAFT")
+  publicProfileSlug  String                  @unique
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  credentials        Credential[]
+  empanelmentApps    EmpanelmentApplication[]
+  caseAssignments    CaseMediator[]
+}
+
+model Credential {
+  id                 String          @id @default(uuid())
+  mediatorId         String
+  type               String
+  issuingBody        String
+  credentialNumber   String
+  issueDate          DateTime
+  expiryDate         DateTime?
+  documentId         String?
+  verificationStatus String          @default("PENDING")
+  verifiedBy         String?
+  mediator           MediatorProfile @relation(fields: [mediatorId], references: [id], onDelete: Cascade)
+  verifier           User?           @relation("CredentialVerifier", fields: [verifiedBy], references: [id])
+}
+
+model EmpanelmentApplication {
+  id                String          @id @default(uuid())
+  mediatorId        String
+  panel             String
+  applicationStatus String          @default("SUBMITTED")
+  submittedAt       DateTime        @default(now())
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  rejectionReason   String?
+  notes             String?
+  mediator          MediatorProfile @relation(fields: [mediatorId], references: [id], onDelete: Cascade)
+  reviewer          User?           @relation("EmpanelmentReviewer", fields: [reviewedBy], references: [id])
+}
+
+model Case {
+  id           String            @id @default(uuid())
+  caseNumber   String            @unique
+  createdBy    String
+  caseType     String
+  jurisdiction String
+  status       String            @default("SUBMITTED")
+  priority     String            @default("NORMAL")
+  description  String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  creator      User              @relation("CaseCreator", fields: [createdBy], references: [id])
+  parties      CaseParty[]
+  mediators    CaseMediator[]
+  documents    Document[]
+  sessions     MediationSession[]
+  settlement   Settlement?
+}
+
+model CaseParty {
+  id               String   @id @default(uuid())
+  caseId           String
+  userId           String
+  role             String
+  invitationStatus String   @default("PENDING")
+  joinedAt         DateTime @default(now())
+  case             Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id])
+}
+
+model CaseMediator {
+  id         String          @id @default(uuid())
+  caseId     String
+  mediatorId String
+  role       String          @default("PRIMARY")
+  status     String          @default("ASSIGNED")
+  assignedAt DateTime        @default(now())
+  case       Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  mediator   MediatorProfile @relation(fields: [mediatorId], references: [id])
+}
+
+model Document {
+  id          String    @id @default(uuid())
+  ownerId     String
+  caseId      String?
+  type        String
+  fileName    String
+  mimeType    String
+  size        Int
+  storageKey  String
+  checksum    String
+  uploadedBy  String
+  visibility  String    @default("PRIVATE")
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+  case        Case?     @relation(fields: [caseId], references: [id])
+  user        User      @relation(fields: [ownerId], references: [id])
+}
+
+model MediationSession {
+  id              String    @id @default(uuid())
+  caseId          String
+  scheduledAt     DateTime
+  duration        Int
+  status          String    @default("SCHEDULED")
+  meetingProvider String?
+  meetingRoomId   String?
+  endedAt         DateTime?
+  case            Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model Settlement {
+  id              String    @id @default(uuid())
+  caseId          String    @unique
+  status          String    @default("DRAFT")
+  draftDocumentId String?
+  finalDocumentId String?
+  agreedAt        DateTime?
+  signedAt        DateTime?
+  registeredAt    DateTime?
+  case            Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id            String              @id @default(uuid())
+  title         String
+  slug          String              @unique
+  description   String
+  eventType     String
+  location      String
+  startAt       DateTime
+  endAt         DateTime
+  capacity      Int
+  status        String              @default("PUBLISHED")
+  publishedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id           String   @id @default(uuid())
+  eventId      String
+  userId       String
+  status       String   @default("CONFIRMED")
+  paymentId    String?
+  registeredAt DateTime @default(now())
+  event        Event    @relation(fields: [eventId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  provider          String        @default("RAZORPAY")
+  providerPaymentId String?       @unique
+  amount            Float
+  currency          String        @default("INR")
+  status            PaymentStatus @default(PENDING)
+  userId            String
+  organizationId    String?
+  purpose           String
+  referenceType     String
+  referenceId       String
+  paidAt            DateTime?
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  user              User          @relation(fields: [userId], references: [id])
+  organization      Organization? @relation(fields: [organizationId], references: [id])
+  refunds           Refund[]
+}
+
+model Refund {
+  id               String   @id @default(uuid())
+  paymentId        String
+  providerRefundId String   @unique
+  amount           Float
+  reason           String?
+  createdAt        DateTime @default(now())
+  payment          Payment  @relation(fields: [paymentId], references: [id])
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  channel   NotificationChannel @default(IN_APP)
+  status    String              @default("PENDING")
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id])
+}
+
+model JobPosting {
+  id           String           @id @default(uuid())
+  title        String
+  organization String
+  location     String
+  type         String
+  description  String
+  status       String           @default("ACTIVE")
+  createdAt    DateTime         @default(now())
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id           String     @id @default(uuid())
+  jobPostingId String
+  userId       String
+  status       String     @default("SUBMITTED")
+  appliedAt    DateTime   @default(now())
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  action       String
+  resourceType String
+  resourceId   String
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  actor        User     @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+}
+
+model PlatformSetting {
+  key       String   @id
+  value     String
+  type      String   @default("STRING")
+  updatedAt DateTime @updatedAt
+}

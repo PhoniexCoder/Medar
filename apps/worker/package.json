@@ -1,0 +1,25 @@
+{
+  "name": "worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@medar/config": "workspace:*",
+    "@medar/types": "workspace:*",
+    "bullmq": "^5.41.6",
+    "ioredis": "^5.6.0"
+  },
+  "devDependencies": {
+    "@medar/tsconfig": "workspace:*",
+    "@types/node": "^22.13.4",
+    "eslint": "^9.20.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}
