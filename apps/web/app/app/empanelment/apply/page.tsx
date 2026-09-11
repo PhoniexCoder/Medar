@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, Badge, Button } from '@medar/ui';
+import { API_BASE_URL } from '../../../../lib/api';
 
 export default function EmpanelmentApplyPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function EmpanelmentApplyPage() {
         return;
       }
 
-      const res = await fetch('http://localhost:4000/api/v1/mediators/empanelment/apply', {
+      const res = await fetch(`${API_BASE_URL}/mediators/empanelment/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

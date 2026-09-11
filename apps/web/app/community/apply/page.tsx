@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/Navbar';
 import { Footer } from '../../../components/Footer';
 import { Card, Badge, Button } from '@medar/ui';
+import { API_BASE_URL } from '../../../lib/api';
 
 export default function MembershipApplyPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function MembershipApplyPage() {
         return;
       }
 
-      const res = await fetch('http://localhost:4000/api/v1/memberships/subscribe', {
+      const res = await fetch(`${API_BASE_URL}/memberships/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

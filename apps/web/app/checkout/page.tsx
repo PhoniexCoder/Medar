@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { Card, Badge, Button } from '@medar/ui';
+import { API_BASE_URL } from '../../lib/api';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function CheckoutPage() {
       }
 
       // Step 1: Create Order via API
-      const res = await fetch('http://localhost:4000/api/v1/payments/create-order', {
+      const res = await fetch(`${API_BASE_URL}/payments/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +44,7 @@ export default function CheckoutPage() {
       const orderData = await res.json();
 
       // Step 2: Verify & Fulfill Payment
-      const verifyRes = await fetch('http://localhost:4000/api/v1/payments/verify', {
+      const verifyRes = await fetch(`${API_BASE_URL}/payments/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
