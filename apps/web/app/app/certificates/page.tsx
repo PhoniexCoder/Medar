@@ -393,11 +393,13 @@ export default function CertificatesPage() {
       {selectedCert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="relative max-w-4xl w-full bg-white rounded-lg p-8 text-black shadow-2xl border-4 border-[#c49b38]">
+            {/* Top Close Button */}
             <button 
               onClick={() => setSelectedCert(null)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-black font-mono text-sm px-2 py-1 bg-slate-100 rounded"
+              className="absolute top-4 right-4 flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0B0C0E] hover:bg-slate-800 text-white font-mono text-xs uppercase tracking-wider rounded transition-all shadow-md cursor-pointer font-semibold"
             >
-              ✕ Close
+              <span>✕</span>
+              <span>Close</span>
             </button>
 
             <div className="text-center space-y-4 py-6 border-8 double border-[#c49b38]/40 p-8">
@@ -433,13 +435,25 @@ export default function CertificatesPage() {
               </div>
             </div>
 
+            {/* Bottom Modal Actions */}
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setSelectedCert(null)} className="text-xs text-slate-700">
+              <button
+                type="button"
+                onClick={() => setSelectedCert(null)}
+                className="px-5 py-2.5 rounded border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-mono text-xs uppercase tracking-wider font-semibold transition-colors shadow-sm cursor-pointer"
+              >
                 Close
-              </Button>
-              <Button variant="primary" onClick={() => handleDownloadPDF(selectedCert)} className="text-xs">
-                Download / Print PDF →
-              </Button>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDownloadPDF(selectedCert)}
+                className="px-6 py-2.5 rounded bg-[#c49b38] hover:bg-[#b08828] text-white font-mono text-xs uppercase tracking-wider font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Download / Print PDF →</span>
+              </button>
             </div>
           </div>
         </div>
