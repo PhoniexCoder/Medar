@@ -5,7 +5,12 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api/v1');
-  app.use(cookieParser());
+  
+  // Safe CommonJS / ESM interop for cookie-parser
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cp = cookieParser as any;
+  const cookieMiddleware = typeof cp === 'function' ? cp : (typeof cp?.default === 'function' ? cp.default : require('cookie-parser'));
+  app.use(cookieMiddleware());
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true
