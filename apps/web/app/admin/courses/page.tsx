@@ -1,80 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '@medar/ui';
-
-interface CourseContent {
-  id: string;
-  courseName: string;
-  cohort: string;
-  modules: {
-    id: string;
-    num: string;
-    name: string;
-    hours: string;
-    status: 'PUBLISHED' | 'DRAFT';
-    readings: { title: string; type: string; size: string; url: string }[];
-    lectures: { title: string; speaker: string; duration: string; videoUrl: string }[];
-  }[];
-}
+import { getCourses, saveCourses, CourseItem, CourseReading, CourseLecture } from '../../../lib/coursesData';
 
 export default function CourseContentAdminPage() {
-  const [courses, setCourses] = useState<CourseContent[]>([
-    {
-      id: 'course-1',
-      courseName: 'Certificate in Mediation — Foundation Program',
-      cohort: 'Cohort 1 (Active)',
-      modules: [
-        {
-          id: 'mod-1',
-          num: '01',
-          name: 'Foundations of Mediation & ADR Frameworks',
-          hours: '10 hrs',
-          status: 'PUBLISHED',
-          readings: [
-            { title: 'Medar Official Handbook: ADR Theory & Core Principles', type: 'PDF Document', size: '3.8 MB', url: '/docs/handbook-adr.pdf' },
-            { title: 'Statutory Comparison: Mediation Act 2023 vs Section 89 CPC', type: 'Legal Briefing', size: '1.4 MB', url: '/docs/mediation-act-2023.pdf' },
-            { title: 'Code of Ethics & Mediator Impartiality Guidelines', type: 'Reference Sheet', size: '850 KB', url: '/docs/ethics-guidelines.pdf' }
-          ],
-          lectures: [
-            { title: 'Lecture 1.1: The Spectrum of Alternative Dispute Resolution', speaker: 'Dr. A. S. Nariman', duration: '45 mins', videoUrl: 'https://vimeo.com/medar/lec-1-1' },
-            { title: 'Lecture 1.2: Voluntariness, Confidentiality & Neutrality in Practice', speaker: 'Justice R. V. Raveendran', duration: '55 mins', videoUrl: 'https://vimeo.com/medar/lec-1-2' }
-          ]
-        },
-        {
-          id: 'mod-2',
-          num: '02',
-          name: 'Communication, Caucusing & Negotiation Dynamics',
-          hours: '16 hrs',
-          status: 'PUBLISHED',
-          readings: [
-            { title: 'Interest-Based Negotiation: Moving Beyond Positional Bargaining', type: 'Case Study', size: '2.2 MB', url: '/docs/interest-negotiation.pdf' },
-            { title: 'Caucus Protocols: Managing Sensitive Commercial Disclosures', type: 'Practice Guide', size: '1.1 MB', url: '/docs/caucus-protocols.pdf' }
-          ],
-          lectures: [
-            { title: 'Lecture 2.1: The Architecture of an Effective Joint Session', speaker: 'Adv. Rajesh Kulkarni', duration: '60 mins', videoUrl: 'https://vimeo.com/medar/lec-2-1' }
-          ]
-        },
-        {
-          id: 'mod-3',
-          num: '03',
-          name: 'Simulated Live Mediation Role-Play Assessment',
-          hours: '14 hrs',
-          status: 'PUBLISHED',
-          readings: [
-            { title: 'Confidential Case Briefing: TechVentures Ltd. vs Alpha Logistics', type: 'Simulated File', size: '3.1 MB', url: '/docs/simulated-case.pdf' }
-          ],
-          lectures: [
-            { title: 'Lecture 3.1: Live Simulation Hearing Briefing & Observer Guidelines', speaker: 'Adv. Priya Sharma', duration: '40 mins', videoUrl: 'https://vimeo.com/medar/lec-3-1' }
-          ]
-        }
-      ]
-    }
-  ]);
-
+  const [courses, setCourses] = useState<CourseItem[]>([]);
   const [selectedCourseIndex, setSelectedCourseIndex] = useState(0);
-  const [selectedModuleId, setSelectedModuleId] = useState('mod-1');
+  const [selectedModuleId, setSelectedModuleId] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isNewModuleModalOpen, setIsNewModuleModalOpen] = useState(false);
   const [uploadType, setUploadType] = useState<'reading' | 'lecture'>('reading');
 
   // Form states for adding notes/reading
@@ -88,88 +23,129 @@ export default function CourseContentAdminPage() {
   const [lectureDuration, setLectureDuration] = useState('45 mins');
   const [videoUrl, setVideoUrl] = useState('');
 
-  const currentCourse = courses[selectedCourseIndex];
-  const currentModule = currentCourse?.modules.find(m => m.id === selectedModuleId) || currentCourse?.modules[0];
+  // Form states for new module
+  const [newModuleName, setNewModuleName] = useState('');
+  const [newModuleHours, setNewModuleHours] = useState('15 hrs');
+  const [newModuleSummary, setNewModuleSummary] = useState('');
+
+  useEffect(() => {
+    const loaded = getCourses();
+    setCourses(loaded);
+    if (loaded.length > 0 && loaded[0].modules.length > 0) {
+      setSelectedModuleId(loaded[0].modules[0].id);
+    }
+  }, []);
+
+  const currentCourse = courses[selectedCourseIndex] || courses[0];
+  const currentModule = currentCourse?.modules?.find(m => m.id === selectedModuleId) || currentCourse?.modules?.[0];
 
   const handleAddReading = (e: React.FormEvent) => {
     e.preventDefault();
     if (!readingTitle.trim() || !currentModule) return;
 
-    const newReading = {
+    const newReading: CourseReading = {
       title: readingTitle,
       type: readingType,
       size: readingSize,
       url: `/uploads/${readingTitle.toLowerCase().replace(/\s+/g, '-')}.pdf`
     };
 
-    setCourses(prev => {
-      const updated = [...prev];
-      const course = updated[selectedCourseIndex];
-      const mod = course.modules.find(m => m.id === currentModule.id);
-      if (mod) {
-        mod.readings.push(newReading);
-      }
-      return updated;
-    });
+    const updated = [...courses];
+    const course = updated[selectedCourseIndex];
+    const mod = course.modules.find(m => m.id === currentModule.id);
+    if (mod) {
+      mod.readings.push(newReading);
+    }
+    setCourses(updated);
+    saveCourses(updated);
 
     setReadingTitle('');
     setIsUploadModalOpen(false);
-    alert('Course note / reading material successfully uploaded and published to student portal!');
+    alert(`Success: "${newReading.title}" uploaded and published live to ${currentCourse.courseName}!`);
   };
 
   const handleAddLecture = (e: React.FormEvent) => {
     e.preventDefault();
     if (!lectureTitle.trim() || !currentModule) return;
 
-    const newLecture = {
+    const newLecture: CourseLecture = {
       title: lectureTitle,
-      speaker: speakerName || 'Faculty Guest Speaker',
+      speaker: speakerName || 'Faculty Speaker',
       duration: lectureDuration,
       videoUrl: videoUrl || 'https://vimeo.com/medar/stream'
     };
 
-    setCourses(prev => {
-      const updated = [...prev];
-      const course = updated[selectedCourseIndex];
-      const mod = course.modules.find(m => m.id === currentModule.id);
-      if (mod) {
-        mod.lectures.push(newLecture);
-      }
-      return updated;
-    });
+    const updated = [...courses];
+    const course = updated[selectedCourseIndex];
+    const mod = course.modules.find(m => m.id === currentModule.id);
+    if (mod) {
+      mod.lectures.push(newLecture);
+    }
+    setCourses(updated);
+    saveCourses(updated);
 
     setLectureTitle('');
     setSpeakerName('');
     setVideoUrl('');
     setIsUploadModalOpen(false);
-    alert('Video lecture stream successfully added to course curriculum!');
+    alert(`Success: "${newLecture.title}" stream published live to ${currentCourse.courseName}!`);
+  };
+
+  const handleAddModule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModuleName.trim() || !currentCourse) return;
+
+    const newNum = String(currentCourse.modules.length + 1).padStart(2, '0');
+    const newMod = {
+      id: `mod-${currentCourse.id}-${Date.now()}`,
+      num: newNum,
+      name: newModuleName,
+      hours: newModuleHours,
+      status: 'PUBLISHED' as const,
+      summary: newModuleSummary || 'Course module curriculum & practical assessment.',
+      readings: [],
+      lectures: []
+    };
+
+    const updated = [...courses];
+    updated[selectedCourseIndex].modules.push(newMod);
+    setCourses(updated);
+    saveCourses(updated);
+
+    setSelectedModuleId(newMod.id);
+    setNewModuleName('');
+    setNewModuleSummary('');
+    setIsNewModuleModalOpen(false);
+    alert(`New Module ${newNum} created in ${currentCourse.courseName}!`);
   };
 
   const handleDeleteReading = (idx: number) => {
     if (!currentModule) return;
-    setCourses(prev => {
-      const updated = [...prev];
-      const course = updated[selectedCourseIndex];
-      const mod = course.modules.find(m => m.id === currentModule.id);
-      if (mod) {
-        mod.readings.splice(idx, 1);
-      }
-      return updated;
-    });
+    const updated = [...courses];
+    const course = updated[selectedCourseIndex];
+    const mod = course.modules.find(m => m.id === currentModule.id);
+    if (mod) {
+      mod.readings.splice(idx, 1);
+    }
+    setCourses(updated);
+    saveCourses(updated);
   };
 
   const handleDeleteLecture = (idx: number) => {
     if (!currentModule) return;
-    setCourses(prev => {
-      const updated = [...prev];
-      const course = updated[selectedCourseIndex];
-      const mod = course.modules.find(m => m.id === currentModule.id);
-      if (mod) {
-        mod.lectures.splice(idx, 1);
-      }
-      return updated;
-    });
+    const updated = [...courses];
+    const course = updated[selectedCourseIndex];
+    const mod = course.modules.find(m => m.id === currentModule.id);
+    if (mod) {
+      mod.lectures.splice(idx, 1);
+    }
+    setCourses(updated);
+    saveCourses(updated);
   };
+
+  if (!currentCourse) {
+    return <div className="p-8 text-white">Loading Course Studio...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -179,11 +155,11 @@ export default function CourseContentAdminPage() {
           <div className="flex items-center gap-2">
             <Badge variant="gold">ACADEMIC CONTENT MANAGEMENT</Badge>
             <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
-              ● Live Sync
+              ● Synchronized with Candidate Portal
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">Course & Lecture Studio</h1>
-          <p className="text-xs text-slate-400 font-mono">Upload syllabus notes, PDFs, case precedents, and video masterclasses for enrolled cohorts</p>
+          <p className="text-xs text-slate-400 font-mono">Manage syllabus notes, PDFs, case precedents, and video masterclasses across all 4 Medar Programs</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -211,14 +187,16 @@ export default function CourseContentAdminPage() {
         </div>
       </div>
 
-      {/* Course Selector Tabs */}
+      {/* Course Selector Tabs (All 4 Mock Courses from Catalog) */}
       <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
         {courses.map((course, idx) => (
           <button
             key={course.id}
             onClick={() => {
               setSelectedCourseIndex(idx);
-              setSelectedModuleId(course.modules[0]?.id || '');
+              if (course.modules.length > 0) {
+                setSelectedModuleId(course.modules[0].id);
+              }
             }}
             className={`px-4 py-2 text-xs font-mono rounded-sm transition-all cursor-pointer ${
               selectedCourseIndex === idx
@@ -226,7 +204,7 @@ export default function CourseContentAdminPage() {
                 : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            {course.courseName} <span className="text-[10px] opacity-80">({course.cohort})</span>
+            {course.courseName} <span className="text-[10px] opacity-80">({course.price})</span>
           </button>
         ))}
       </div>
@@ -238,11 +216,16 @@ export default function CourseContentAdminPage() {
         <div className="space-y-4">
           <div className="text-xs font-mono uppercase text-slate-400 font-bold tracking-wider flex items-center justify-between">
             <span>Course Modules</span>
-            <span className="text-amber-400">{currentCourse?.modules.length} Modules</span>
+            <button
+              onClick={() => setIsNewModuleModalOpen(true)}
+              className="text-amber-400 hover:underline text-xs lowercase font-mono cursor-pointer"
+            >
+              + add module
+            </button>
           </div>
 
           <div className="space-y-2">
-            {currentCourse?.modules.map((mod) => (
+            {currentCourse.modules.map((mod) => (
               <div
                 key={mod.id}
                 onClick={() => setSelectedModuleId(mod.id)}
@@ -271,22 +254,23 @@ export default function CourseContentAdminPage() {
 
         {/* Right Column: Active Module Content Manager */}
         <div className="lg:col-span-2 space-y-6">
-          {currentModule && (
+          {currentModule ? (
             <Card variant="bordered" className="p-6 bg-slate-900/90 border-slate-800 space-y-6">
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
                   <span className="text-xs font-mono text-amber-500 font-bold">MODULE {currentModule.num} CONTENT</span>
                   <h2 className="text-xl font-serif font-bold text-white mt-0.5">{currentModule.name}</h2>
+                  <p className="text-xs text-slate-400 font-mono mt-1">{currentModule.summary}</p>
                 </div>
-                <span className="text-xs font-mono text-slate-400">Total Duration: {currentModule.hours}</span>
+                <span className="text-xs font-mono text-slate-400 shrink-0">Duration: {currentModule.hours}</span>
               </div>
 
               {/* 1. Uploaded Notes & Readings List */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
-                    <span>📚</span> Uploaded Notes & Study Materials ({currentModule.readings.length})
+                    <span>📚</span> Notes & Study Materials ({currentModule.readings.length})
                   </h3>
                   <button
                     onClick={() => {
@@ -299,35 +283,41 @@ export default function CourseContentAdminPage() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  {currentModule.readings.map((r, i) => (
-                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800/80">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">📄</span>
-                        <div>
-                          <div className="text-sm font-semibold text-white">{r.title}</div>
-                          <div className="text-[10px] font-mono text-slate-400">{r.type} • {r.size} • <span className="text-emerald-400">Live in Student Vault</span></div>
+                {currentModule.readings.length === 0 ? (
+                  <div className="text-center p-6 bg-slate-950/40 rounded border border-dashed border-slate-800 text-xs text-slate-500">
+                    No notes or reading materials uploaded yet for this module. Click "+ Add New Note" above.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {currentModule.readings.map((r, i) => (
+                      <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800/80">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">📄</span>
+                          <div>
+                            <div className="text-sm font-semibold text-white">{r.title}</div>
+                            <div className="text-[10px] font-mono text-slate-400">{r.type} • {r.size} • <span className="text-emerald-400">Live in Candidate Portal</span></div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => alert(`Previewing document: ${r.title}`)}
+                            className="px-2.5 py-1 text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded cursor-pointer"
+                          >
+                            Preview
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReading(i)}
+                            className="px-2 py-1 text-xs font-mono text-red-400 hover:bg-red-950/40 rounded cursor-pointer"
+                            title="Delete Note"
+                          >
+                            ✕
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => alert(`Previewing document: ${r.title}`)}
-                          className="px-2.5 py-1 text-xs font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded cursor-pointer"
-                        >
-                          Preview
-                        </button>
-                        <button
-                          onClick={() => handleDeleteReading(i)}
-                          className="px-2 py-1 text-xs font-mono text-red-400 hover:bg-red-950/40 rounded cursor-pointer"
-                          title="Delete Note"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 2. Video Lectures & Masterclasses List */}
@@ -347,56 +337,65 @@ export default function CourseContentAdminPage() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  {currentModule.lectures.map((l, i) => (
-                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800/80">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">▶️</span>
-                        <div>
-                          <div className="text-sm font-semibold text-white">{l.title}</div>
-                          <div className="text-[10px] font-mono text-slate-400">Faculty: {l.speaker} • Duration: {l.duration} • <span className="text-blue-400">{l.videoUrl}</span></div>
+                {currentModule.lectures.length === 0 ? (
+                  <div className="text-center p-6 bg-slate-950/40 rounded border border-dashed border-slate-800 text-xs text-slate-500">
+                    No video lectures added yet. Click "+ Add Lecture Stream" above.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {currentModule.lectures.map((l, i) => (
+                      <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800/80">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">▶️</span>
+                          <div>
+                            <div className="text-sm font-semibold text-white">{l.title}</div>
+                            <div className="text-[10px] font-mono text-slate-400">Speaker: {l.speaker} • Duration: {l.duration} • <span className="text-blue-400">{l.videoUrl}</span></div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => alert(`Playing test stream for: ${l.title}`)}
+                            className="px-2.5 py-1 text-xs font-mono bg-amber-500/10 hover:bg-amber-500 hover:text-black text-amber-300 border border-amber-500/30 rounded cursor-pointer"
+                          >
+                            Play
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLecture(i)}
+                            className="px-2 py-1 text-xs font-mono text-red-400 hover:bg-red-950/40 rounded cursor-pointer"
+                            title="Delete Lecture"
+                          >
+                            ✕
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => alert(`Playing test stream for: ${l.title}`)}
-                          className="px-2.5 py-1 text-xs font-mono bg-amber-500/10 hover:bg-amber-500 hover:text-black text-amber-300 border border-amber-500/30 rounded cursor-pointer"
-                        >
-                          Play
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLecture(i)}
-                          className="px-2 py-1 text-xs font-mono text-red-400 hover:bg-red-950/40 rounded cursor-pointer"
-                          title="Delete Lecture"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </Card>
+          ) : (
+            <div className="p-8 text-center text-slate-500 border border-dashed border-slate-800 rounded">
+              Select a module from the left to view and upload its syllabus.
+            </div>
           )}
         </div>
 
       </div>
 
-      {/* Upload / Add Modal */}
+      {/* Upload Note / Lecture Modal */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="relative max-w-lg w-full bg-slate-900 border border-amber-500/50 rounded-lg p-6 sm:p-8 text-white shadow-2xl space-y-6">
             
-            {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-800 pb-4">
               <div>
                 <Badge variant="gold">
                   {uploadType === 'reading' ? 'UPLOAD STUDY MATERIAL / NOTE' : 'ADD VIDEO LECTURE STREAM'}
                 </Badge>
                 <h3 className="text-lg font-serif font-bold text-white mt-1">
-                  Module {currentModule?.num}: {currentModule?.name}
+                  {currentCourse.courseName} — Module {currentModule?.num}
                 </h3>
               </div>
 
@@ -408,7 +407,6 @@ export default function CourseContentAdminPage() {
               </button>
             </div>
 
-            {/* Form for Study Material */}
             {uploadType === 'reading' ? (
               <form onSubmit={handleAddReading} className="space-y-4">
                 <div>
@@ -461,12 +459,11 @@ export default function CourseContentAdminPage() {
                     Cancel
                   </Button>
                   <Button variant="primary" type="submit" className="text-xs">
-                    Upload & Publish to LMS →
+                    Upload & Publish to Candidate Vault →
                   </Button>
                 </div>
               </form>
             ) : (
-              /* Form for Video Lecture */
               <form onSubmit={handleAddLecture} className="space-y-4">
                 <div>
                   <label className="block text-xs font-mono uppercase text-slate-400 mb-1">Lecture Title *</label>
@@ -475,7 +472,7 @@ export default function CourseContentAdminPage() {
                     required
                     value={lectureTitle}
                     onChange={(e) => setLectureTitle(e.target.value)}
-                    placeholder="e.g. Lecture 2.3: Overcoming Hostility in Commercial Caucus"
+                    placeholder="e.g. Masterclass 2.3: Overcoming Hostility in Commercial Caucus"
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
@@ -527,6 +524,73 @@ export default function CourseContentAdminPage() {
               </form>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Add New Module Modal */}
+      {isNewModuleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative max-w-lg w-full bg-slate-900 border border-amber-500/50 rounded-lg p-6 sm:p-8 text-white shadow-2xl space-y-6">
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div>
+                <Badge variant="gold">CREATE NEW COURSE MODULE</Badge>
+                <h3 className="text-lg font-serif font-bold text-white mt-1">
+                  {currentCourse.courseName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsNewModuleModalOpen(false)}
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white font-mono text-xs rounded cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            <form onSubmit={handleAddModule} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono uppercase text-slate-400 mb-1">Module Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newModuleName}
+                  onChange={(e) => setNewModuleName(e.target.value)}
+                  placeholder="e.g. Cross-Border Enforcement & Singapore Convention"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase text-slate-400 mb-1">Estimated Hours</label>
+                <input
+                  type="text"
+                  value={newModuleHours}
+                  onChange={(e) => setNewModuleHours(e.target.value)}
+                  placeholder="15 hrs"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase text-slate-400 mb-1">Module Overview / Summary</label>
+                <textarea
+                  rows={3}
+                  value={newModuleSummary}
+                  onChange={(e) => setNewModuleSummary(e.target.value)}
+                  placeholder="Brief summary of learning outcomes and case studies..."
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsNewModuleModalOpen(false)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button variant="primary" type="submit" className="text-xs">
+                  Create Module →
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

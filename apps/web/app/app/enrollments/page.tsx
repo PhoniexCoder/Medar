@@ -1,107 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '@medar/ui';
-
-interface ModuleItem {
-  num: string;
-  name: string;
-  hours: string;
-  status: 'COMPLETED' | 'IN_PROGRESS' | 'LOCKED';
-  summary: string;
-  readings: { title: string; type: string; size: string }[];
-  lectures: { title: string; duration: string; speaker: string }[];
-  quizScore?: string;
-  currentLesson?: {
-    title: string;
-    duration: string;
-    scenario: string;
-    question: string;
-    options: string[];
-    explanation: string;
-  };
-}
+import { getCourses, CourseItem, CourseModule } from '../../../lib/coursesData';
 
 export default function MyEnrollmentsPage() {
-  const [selectedMaterialsModule, setSelectedMaterialsModule] = useState<ModuleItem | null>(null);
-  const [activeLessonModule, setActiveLessonModule] = useState<ModuleItem | null>(null);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [selectedCourseIndex, setSelectedCourseIndex] = useState(0);
+  const [selectedMaterialsModule, setSelectedMaterialsModule] = useState<CourseModule | null>(null);
+  const [activeLessonModule, setActiveLessonModule] = useState<CourseModule | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showAnswerFeedback, setShowAnswerFeedback] = useState(false);
-  const [lessonCompleted, setLessonCompleted] = useState(false);
 
-  const modules: ModuleItem[] = [
-    {
-      num: '01',
-      name: 'Foundations of Mediation & ADR Frameworks',
-      hours: '10 hrs',
-      status: 'COMPLETED',
-      summary: 'Comprehensive introduction to alternative dispute resolution theory, the statutory framework under the India Mediation Act 2023, and international comparisons (Singapore Convention, UNCITRAL Model Law).',
-      quizScore: '94% (Passed with Distinction)',
-      readings: [
-        { title: 'Medar Official Handbook: ADR Theory & Core Principles', type: 'PDF Document', size: '3.8 MB' },
-        { title: 'Statutory Comparison: Mediation Act 2023 vs Section 89 CPC', type: 'Legal Briefing', size: '1.4 MB' },
-        { title: 'Code of Ethics & Mediator Impartiality Guidelines', type: 'Reference Sheet', size: '850 KB' }
-      ],
-      lectures: [
-        { title: 'Lecture 1.1: The Spectrum of Alternative Dispute Resolution', duration: '45 mins', speaker: 'Dr. A. S. Nariman' },
-        { title: 'Lecture 1.2: Voluntariness, Confidentiality & Neutrality in Practice', duration: '55 mins', speaker: 'Justice R. V. Raveendran' }
-      ]
-    },
-    {
-      num: '02',
-      name: 'Communication, Caucusing & Negotiation Dynamics',
-      hours: '16 hrs',
-      status: 'COMPLETED',
-      summary: 'Mastering active listening, interest-based bargaining (Harvard Negotiation Project principles), reframing toxic statements, and strategic caucus management.',
-      quizScore: '90% (Passed)',
-      readings: [
-        { title: 'Interest-Based Negotiation: Moving Beyond Positional Bargaining', type: 'Case Study', size: '2.2 MB' },
-        { title: 'Caucus Protocols: Managing Sensitive Commercial Disclosures', type: 'Practice Guide', size: '1.1 MB' },
-        { title: 'Emotional Intelligence & De-escalation in High-Conflict Disputes', type: 'Research Paper', size: '1.9 MB' }
-      ],
-      lectures: [
-        { title: 'Lecture 2.1: The Architecture of an Effective Joint Session', duration: '60 mins', speaker: 'Adv. Rajesh Kulkarni' },
-        { title: 'Lecture 2.2: Advanced Caucusing Tactics & Reality Testing', duration: '50 mins', speaker: 'Tariq Al-Mansoor' }
-      ]
-    },
-    {
-      num: '03',
-      name: 'Simulated Live Mediation Role-Play Assessment',
-      hours: '14 hrs',
-      status: 'IN_PROGRESS',
-      summary: 'Hands-on simulated mediation hearings in commercial and shareholder disputes. Practice opening statements, agenda setting, reality testing, and term sheet formulation.',
-      readings: [
-        { title: 'Confidential Case Briefing: TechVentures Ltd. vs Alpha Logistics', type: 'Simulated File', size: '3.1 MB' },
-        { title: 'Mediated Settlement Agreement (MSA) Standard Clauses Model', type: 'Drafting Template', size: '920 KB' }
-      ],
-      lectures: [
-        { title: 'Lecture 3.1: Live Simulation Hearing Briefing & Observer Guidelines', duration: '40 mins', speaker: 'Adv. Priya Sharma' }
-      ],
-      currentLesson: {
-        title: 'Lesson 3.2: Reality Testing & Overcoming Deadlock in Commercial Claims',
-        duration: '25 mins • Interactive Simulation',
-        scenario: 'You are presiding as mediator over a commercial dispute between a software vendor (Claimant) and an enterprise logistics provider (Respondent). The parties are deadlocked over an alleged ₹1.85 Cr SLA breach penalty. The Claimant demands immediate payment; the Respondent threatens countersuing in High Court.',
-        question: 'What is the most effective reality-testing question to ask the Respondent in private caucus to test their BATNA (Best Alternative to a Negotiated Agreement)?',
-        options: [
-          'Why did you breach the SLA contract in the first place?',
-          'If this goes to litigation, what will be your estimated legal costs, management time, and timeline over the next 3 years compared to settling today?',
-          'Do you realize the Claimant has a stronger legal team than yours?',
-          'Can you just split the difference and pay 50% to finish this today?'
-        ],
-        explanation: 'Option 2 is the classic, interest-based reality testing probe. It shifts the party from stubborn positional rhetoric to objective cost-benefit analysis (legal fees, lost executive focus, judicial delay) without compromising mediator neutrality.'
-      }
-    }
-  ];
+  useEffect(() => {
+    const loaded = getCourses();
+    setCourses(loaded);
+  }, []);
 
-  const handleOpenMaterials = (m: ModuleItem) => {
+  const currentCourse = courses[selectedCourseIndex] || courses[0];
+
+  const handleOpenMaterials = (m: CourseModule) => {
     setSelectedMaterialsModule(m);
   };
 
-  const handleStartLesson = (m: ModuleItem) => {
+  const handleStartLesson = (m: CourseModule) => {
     setActiveLessonModule(m);
     setSelectedAnswer(null);
     setShowAnswerFeedback(false);
-    setLessonCompleted(false);
   };
 
   const handleSelectOption = (index: number) => {
@@ -111,35 +36,53 @@ export default function MyEnrollmentsPage() {
 
   const handleSubmitAnswer = () => {
     setShowAnswerFeedback(true);
-    if (selectedAnswer === 1) {
-      setLessonCompleted(true);
-    }
   };
+
+  if (!currentCourse) {
+    return <div className="p-8 text-white">Loading Enrolled Courses...</div>;
+  }
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           <div className="flex items-center gap-2">
             <Badge variant="gold">MY ENROLLMENTS</Badge>
-            <span className="text-xs text-amber-400 font-mono">Cohort 1 • Active</span>
+            <span className="text-xs text-amber-400 font-mono">{currentCourse.cohort}</span>
           </div>
           <h1 className="text-3xl font-serif font-bold text-white mt-1">Course Modules & Learning Syllabus</h1>
-          <p className="text-xs text-slate-400 font-mono">Certificate in Mediation — Foundation Program (40 Hours Total Duration)</p>
+          <p className="text-xs text-slate-400 font-mono">{currentCourse.courseName} ({currentCourse.duration})</p>
         </div>
 
-        <div className="text-right hidden sm:block">
-          <div className="text-xs font-mono text-slate-400">Total Program Progress</div>
-          <div className="text-xl font-serif font-bold text-amber-400">65% Complete</div>
+        <div className="text-right">
+          <div className="text-xs font-mono text-slate-400">Course Progress</div>
+          <div className="text-xl font-serif font-bold text-amber-400">{currentCourse.progressPercent}% Complete</div>
         </div>
+      </div>
+
+      {/* Course Switcher (Links all 4 Courses) */}
+      <div className="flex flex-wrap gap-2 pb-2">
+        {courses.map((c, idx) => (
+          <button
+            key={c.id}
+            onClick={() => setSelectedCourseIndex(idx)}
+            className={`px-3.5 py-1.5 text-xs font-mono rounded-sm transition-all cursor-pointer ${
+              selectedCourseIndex === idx
+                ? 'bg-amber-500 text-black font-bold shadow-md'
+                : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            {c.courseName}
+          </button>
+        ))}
       </div>
 
       {/* Modules List */}
       <div className="space-y-4">
-        {modules.map((m) => (
+        {currentCourse.modules.map((m) => (
           <Card 
-            key={m.num} 
+            key={m.id || m.num} 
             variant="default" 
             className={`p-6 transition-all ${
               m.status === 'IN_PROGRESS' 
@@ -166,8 +109,8 @@ export default function MyEnrollmentsPage() {
               </div>
 
               <div className="flex sm:flex-col items-end gap-3 w-full lg:w-auto justify-between border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-800">
-                <Badge variant={m.status === 'COMPLETED' ? 'success' : 'gold'}>
-                  {m.status === 'COMPLETED' ? 'COMPLETED' : 'IN PROGRESS (65%)'}
+                <Badge variant={m.status === 'COMPLETED' ? 'success' : m.status === 'IN_PROGRESS' ? 'gold' : 'outline'}>
+                  {m.status === 'COMPLETED' ? 'COMPLETED' : m.status === 'IN_PROGRESS' ? 'IN PROGRESS (65%)' : 'PUBLISHED'}
                 </Badge>
 
                 <div className="flex items-center gap-2">
@@ -176,10 +119,10 @@ export default function MyEnrollmentsPage() {
                     onClick={() => handleOpenMaterials(m)}
                     className="text-xs py-2 px-4 border-slate-700 hover:border-amber-500 text-slate-200"
                   >
-                    📖 Review Materials
+                    📖 Review Materials ({m.readings.length})
                   </Button>
 
-                  {m.status === 'IN_PROGRESS' && (
+                  {(m.status === 'IN_PROGRESS' || m.currentLesson) && (
                     <Button 
                       variant="primary" 
                       onClick={() => handleStartLesson(m)}
@@ -207,7 +150,7 @@ export default function MyEnrollmentsPage() {
                 <h2 className="text-2xl font-serif font-bold text-white mt-1">
                   {selectedMaterialsModule.name}
                 </h2>
-                <p className="text-xs font-mono text-slate-400 mt-1">Official readings, statutory references, and recorded lectures</p>
+                <p className="text-xs font-mono text-slate-400 mt-1">Uploaded notes, statutory references, and masterclass streams</p>
               </div>
 
               <button
@@ -221,60 +164,72 @@ export default function MyEnrollmentsPage() {
             {/* Readings Section */}
             <div className="space-y-3">
               <h3 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
-                <span>📚</span> Required Reading & Statutory Guides
+                <span>📚</span> Required Reading & Study Notes ({selectedMaterialsModule.readings.length})
               </h3>
 
-              <div className="space-y-2">
-                {selectedMaterialsModule.readings.map((reading, i) => (
-                  <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800 hover:border-slate-700 transition-all">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">📄</span>
-                      <div>
-                        <div className="text-sm font-semibold text-white">{reading.title}</div>
-                        <div className="text-[10px] font-mono text-slate-400">{reading.type} • {reading.size}</div>
+              {selectedMaterialsModule.readings.length === 0 ? (
+                <div className="p-4 bg-slate-950 rounded border border-slate-800 text-xs text-slate-400">
+                  No additional documents uploaded for this module yet.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedMaterialsModule.readings.map((reading, i) => (
+                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800 hover:border-slate-700 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">📄</span>
+                        <div>
+                          <div className="text-sm font-semibold text-white">{reading.title}</div>
+                          <div className="text-[10px] font-mono text-slate-400">{reading.type} • {reading.size}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <button 
-                      onClick={() => alert(`Downloading: ${reading.title}`)}
-                      className="px-3 py-1 bg-slate-800 hover:bg-amber-600 hover:text-black text-amber-400 font-mono text-xs rounded transition-all flex items-center gap-1 cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Download
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <button 
+                        onClick={() => alert(`Downloading: ${reading.title}`)}
+                        className="px-3 py-1 bg-slate-800 hover:bg-amber-600 hover:text-black text-amber-400 font-mono text-xs rounded transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Recorded Lectures Section */}
             <div className="space-y-3 pt-2">
               <h3 className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
-                <span>🎥</span> Lecture Archives & Faculty Masterclasses
+                <span>🎥</span> Lecture Archives & Faculty Masterclasses ({selectedMaterialsModule.lectures.length})
               </h3>
 
-              <div className="space-y-2">
-                {selectedMaterialsModule.lectures.map((lec, i) => (
-                  <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">▶️</span>
-                      <div>
-                        <div className="text-sm font-semibold text-white">{lec.title}</div>
-                        <div className="text-[10px] font-mono text-slate-400">Speaker: {lec.speaker} • Duration: {lec.duration}</div>
+              {selectedMaterialsModule.lectures.length === 0 ? (
+                <div className="p-4 bg-slate-950 rounded border border-slate-800 text-xs text-slate-400">
+                  Live lecture stream will be posted before the scheduled session.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedMaterialsModule.lectures.map((lec, i) => (
+                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-950 rounded border border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">▶️</span>
+                        <div>
+                          <div className="text-sm font-semibold text-white">{lec.title}</div>
+                          <div className="text-[10px] font-mono text-slate-400">Speaker: {lec.speaker} • Duration: {lec.duration}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <button 
-                      onClick={() => alert(`Opening stream for: ${lec.title}`)}
-                      className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500 hover:text-black border border-amber-500/30 text-amber-300 font-mono text-xs rounded transition-all cursor-pointer font-semibold"
-                    >
-                      Watch Stream
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <button 
+                        onClick={() => alert(`Opening stream for: ${lec.title}`)}
+                        className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500 hover:text-black border border-amber-500/30 text-amber-300 font-mono text-xs rounded transition-all cursor-pointer font-semibold"
+                      >
+                        Watch Stream
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Footer */}
