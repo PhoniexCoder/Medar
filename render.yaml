@@ -6,8 +6,8 @@ services:
     name: medar-api
     runtime: node
     plan: free
-    region: singapore # or oregon / frankfurt
-    buildCommand: pnpm install && pnpm prisma:generate && pnpm --filter @medar/config --filter @medar/types --filter @medar/validation build && pnpm --filter api build
+    region: singapore
+    buildCommand: pnpm install && pnpm prisma:generate && pnpm --filter @medar/config --filter @medar/types --filter @medar/validation build && pnpm --filter api build && npx prisma migrate deploy
     startCommand: node apps/api/dist/main.js
     envVars:
       - key: NODE_VERSION
@@ -18,34 +18,13 @@ services:
         fromDatabase:
           name: medar-postgres
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: medar-redis
-          property: connectionString
       - key: AUTH_SECRET
         generateValue: true
       - key: FRONTEND_URL
         value: "http://localhost:3000"
 
-  # -------------------------------------------------------------
-  # 2. Medar Background Worker (Background Service - Optional)
-  # -------------------------------------------------------------
-  # - type: worker
-  #   name: medar-worker
-  #   runtime: node
-  #   plan: free
-  #   buildCommand: pnpm install && pnpm --filter worker build
-  #   startCommand: node apps/worker/dist/main.js
-  #   envVars:
-  #     - key: REDIS_URL
-  #       fromService:
-  #         type: redis
-  #         name: medar-redis
-  #         property: connectionString
-
 # -------------------------------------------------------------
-# 3. PostgreSQL Database
+# 2. PostgreSQL Database
 # -------------------------------------------------------------
 databases:
   - name: medar-postgres
