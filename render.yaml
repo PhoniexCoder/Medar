@@ -7,8 +7,8 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: pnpm install && pnpm prisma:generate && pnpm --filter @medar/config --filter @medar/types --filter @medar/validation build && pnpm --filter api build && npx prisma migrate deploy
-    startCommand: node apps/api/dist/main.js
+    buildCommand: npm install -g pnpm && pnpm install && pnpm prisma:generate && pnpm --filter @medar/config --filter @medar/types --filter @medar/validation build && pnpm --filter api build
+    startCommand: npx prisma db push --skip-generate && node apps/api/dist/main.js
     envVars:
       - key: NODE_VERSION
         value: 20.18.0

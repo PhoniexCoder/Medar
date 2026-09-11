@@ -12,8 +12,8 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`Medar API service running on port ${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Medar API service running on port ${port} (0.0.0.0)`);
 }
 
 bootstrap();
