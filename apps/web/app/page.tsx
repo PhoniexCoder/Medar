@@ -1,6 +1,7 @@
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { HeroSection } from '../components/HeroSection';
+import { AiEcosystemSection } from '../components/AiEcosystemSection';
 import { PillarsSection } from '../components/PillarsSection';
 import { JurisdictionGrid } from '../components/JurisdictionGrid';
 import { PersonasSection } from '../components/PersonasSection';
@@ -14,6 +15,7 @@ export default function Home() {
       <Navbar />
       <main>
         <HeroSection />
+        <AiEcosystemSection />
         <PillarsSection />
         <JurisdictionGrid />
         <PersonasSection />

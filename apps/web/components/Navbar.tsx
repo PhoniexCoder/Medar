@@ -55,8 +55,14 @@ export const Navbar: React.FC = () => {
           })}
         </nav>
 
-        {/* Right CTA Button */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Right CTA Actions (Sign In & Enroll) */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/login"
+            className="text-xs font-mono uppercase tracking-wider text-slate-700 hover:text-[#0B0C0E] px-3 py-2 transition-colors font-medium hover:underline underline-offset-4"
+          >
+            Sign In
+          </Link>
           <Link href="/programs/foundation-cohort-1">
             <button className="bg-[#0B0C0E] hover:bg-slate-800 text-white font-mono text-xs uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm">
               Enroll — Cohort 1
@@ -107,9 +113,14 @@ export const Navbar: React.FC = () => {
               {link.label}
             </Link>
           ))}
-          <div className="pt-4 border-t border-[#E8E4D8]">
+          <div className="pt-4 border-t border-[#E8E4D8] flex flex-col gap-2">
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+              <button className="w-full border border-[#D8D2C2] bg-white text-[#0B0C0E] font-mono text-xs uppercase tracking-wider py-2.5 rounded-sm">
+                Sign In
+              </button>
+            </Link>
             <Link href="/programs/foundation-cohort-1" onClick={() => setMobileMenuOpen(false)}>
-              <button className="w-full bg-[#0B0C0E] text-white font-mono text-xs uppercase tracking-wider py-3 rounded-sm">
+              <button className="w-full bg-[#0B0C0E] text-white font-mono text-xs uppercase tracking-wider py-2.5 rounded-sm">
                 Enroll — Cohort 1
               </button>
             </Link>
