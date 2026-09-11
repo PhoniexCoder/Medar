@@ -13,6 +13,9 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { PoliciesGuard } from './common/guards/policies.guard';
 import { OrgGuard } from './common/guards/org.guard';
 
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -24,7 +27,9 @@ import { OrgGuard } from './common/guards/org.guard';
     MembershipsModule,
     AdminModule
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard
