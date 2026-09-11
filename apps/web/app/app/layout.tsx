@@ -54,6 +54,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       )
     },
     {
+      label: 'Dispute Cases',
+      href: '/app/cases',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-16.5-.52c-1.01.143-2.01.317-3 .52m19.5 0v6.75a3 3 0 01-3 3h-1.5a3 3 0 01-3-3V5.49m-9 0v6.75a3 3 0 01-3 3H3a3 3 0 01-3-3V5.49" />
+        </svg>
+      )
+    },
+    {
       label: 'Profile Settings',
       href: '/app/profile',
       icon: (
